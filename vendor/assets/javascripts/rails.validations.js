@@ -11,7 +11,7 @@
   $.fn.validate = function() {
     return this.filter('form[data-validate]').each(function() {
       var form = $(this);
-      var settings = window[form.attr('id')];
+      var settings = (form.data('ref-form-id') != undefined) ? window[form.data('ref-form-id')] : window[form.attr('id')];
 
       // Set up the events for the form
       form
@@ -40,6 +40,12 @@
             clientSideValidations.callbacks.element.pass(element, function() {
               removeError(element);
             }, eventData) })
+          .live('element:validate:reset',  function(eventData) {
+            var element = $(this);
+            element.data('valid', true);
+            element.data('changed', false);
+            removeError(element);
+          })
         // Checkboxes - Live events don't support filter
         .end().find('[data-validate]:checkbox')
           .live('click', function() { $(this).isValid(settings.validators); })
@@ -73,8 +79,12 @@
     if ($(this[0]).is('form')) {
       return validateForm($(this[0]), validators);
     } else {
-      return validateElement($(this[0]), validators[this[0].name]);
+      return validateElement($(this[0]), validators[nameForValidators(this[0])]);
     }
+  }
+  
+  var nameForValidators = function(element) {
+    return ($(element).data('validator-name') != undefined) ? $(element).data('validator-name') : element.name;
   }
 
   var validateForm = function(form, validators) {
